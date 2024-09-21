@@ -124,7 +124,7 @@ class HBNBCommand(cmd.Cmd):
     def do_create(self, arg):
         """Create an object of any class with given parameters"""
         args = shlex.split(arg)
-        if not args:
+        if len(args) == 0:
             print("** class name missing **")
             return
         class_name = args[0]
@@ -132,28 +132,36 @@ class HBNBCommand(cmd.Cmd):
             print("** class doesn't exist **")
             return
 
-        new_instance = HBNBCommand.classes[class_name]()
-
+        # Parse key-value pairs
+        new_obj_data = {}
         for param in args[1:]:
-            key_value = param.split('=', 1)
-            if len(key_value) == 2:
-                key, value = key_value
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1].replace('\\"', '"').replace('_', ' ')
-                elif '.' in value:
-                    try:
-                        value = float(value)
-                    except ValueError:
-                        continue
-                else:
-                    try:
-                        value = int(value)
-                    except ValueError:
-                        continue
-                setattr(new_instance, key, value)
+            if "=" not in param:
+                continue
+            key, value = param.split("=", 1)
 
-        storage.new(new_instance)
-        storage.save()
+            # Handle string values
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1].replace("_", " ").replace('\\"', '"')
+
+            # Handle float values
+            elif "." in value:
+                try:
+                    value = float(value)
+                except ValueError:
+                    continue
+
+            # Handle integer values
+            else:
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+
+            new_obj_data[key] = value
+
+        # Create a new instance of the class
+        new_instance = HBNBCommand.classes[class_name](**new_obj_data)
+        new_instance.save()  # Save the new object
         print(new_instance.id)
 
     def help_create(self):
